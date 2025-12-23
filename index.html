@@ -4,7 +4,15 @@
 <meta charset="utf-8" />
 <title>.</title>
 <style>
-  body { margin:0; overflow:hidden; }
+  body { margin:0; overflow:hidden; }   
+  #corner-text {
+    position: absolute;
+    top: 10px;   /* Distance from top */
+    right: 10px; /* Distance from right */
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+  }
   canvas { display:block; background:#111; }
 </style>
 </head>
@@ -22,8 +30,11 @@
 // Current scene is a tesseract centered around (0,0,0,0)(camera spawns inside), and a pentachoron near (5,0,0,0)(you start facing the pentachoron)
 
 
+const occlusion = 0 // set to 1 to enable occlusion system test
+  
   
 const canvas = document.getElementById("canvas");
+const coordText = document.getElementById('corner-text');
 const ctx = canvas.getContext("2d");
 
 
@@ -419,7 +430,7 @@ function plotPoint(p4, currentTet) {
     let test = 0
     for (let tet of tets) {
         if (tet === currentTet) continue;
-        if (RIT(rayDir, tet).hit) {
+        if (RIT(rayDir, tet).hit && occlusion) {
            test = 1
             return; }
     }
@@ -474,8 +485,9 @@ function plotPoint(p4, currentTet) {
 
 
 
-    drawLabel3D("Down", { x: 0, y: 2, z: 0 });
-    drawLabel3D("Up", { x: 0, y: -2, z: 0 });
+   // drawLabel3D("Down", { x: 0, y: 2, z: 0 });
+  //  drawLabel3D("Up", { x: 0, y: -2, z: 0 });
+    coordText.textContent = "current coordinates: ("+vx+","+vy+","+vz+","+vw+")";
     drawViewingBox();
     requestAnimationFrame(draw);
 }
