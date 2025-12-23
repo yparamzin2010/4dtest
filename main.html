@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>.</title>
+<style>
+  body { margin:0; overflow:hidden; }
+  canvas { display:block; background:#111; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+
+// INSTRUCTIONS:
+// W to go forward in the direction you are facing.
+// S to go backward in direction you are facing.
+// A and D, Q and E are for two more directions, perpendicular to the camera direction.
+// X and C go higher/lower in w dimension(does not currently depend on camera direction yet).
+
+// SHIFT+W,S,A,D,Q, or E rotates the camera in 4d space.
+// Current scene is a tesseract centered around (0,0,0,0)(camera spawns inside), and a pentachoron near (5,0,0,0)(you start facing the pentachoron)
+
+
+  
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+
+const SCALE = 100;
+const FADE_DISTANCE = 4;
+let angleX=0, angleY=0;
+
+let vx=0, vy=0, vz=0, vw=0;
+let v1=0, v2=0, v3=0;
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize(); window.addEventListener("resize", resize);
+
+
+
+resize(); window.addEventListener("resize", resize);
+
+
+
+
+let mouseDown=false, lastX=0, lastY=0;
+canvas.addEventListener("mousedown", e=>{ mouseDown=true; lastX=e.clientX; lastY=e.clientY; });
+canvas.addEventListener("mouseup", ()=>mouseDown=false);
+canvas.addEventListener("mousemove", e=>{
+  if(!mouseDown) return;
+  angleY -= (e.clientX-lastX)*0.01;
+  angleX -= (e.clientY-lastY)*0.01;
+  lastX=e.clientX; lastY=e.clientY;
+});
+
+
+function modMinus2PiTo2Pi(angle){
+  const fourPi = 4*Math.PI, twoPi = 2*Math.PI;
+  if(angle>twoPi) angle -= fourPi;
+  if(angle<-twoPi) angle += fourPi;
+  return angle;
+}
+
+document.addEventListener("keydown", e=>{
+  function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];}
+  function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2],a[3]-b[3]];}
+  function normalize(a){const n=Math.sqrt(dot(a,a)); return [a[0]/n,a[1]/n,a[2]/n,a[3]/n];}
+  if(e.key==="W") v3+=0.1; if(e.key==="S") v3-=0.1; if(e.key==="A") v1+=0.1; if(e.key==="D") v1-=0.1; if(e.key==="Q") v2+=0.1; if(e.key==="Z") v2-=0.1;
+  const e0=[Math.cos(v1),Math.sin(v1)*Math.cos(v2),Math.sin(v1)*Math.sin(v2)*Math.cos(v3),Math.sin(v1)*Math.sin(v2)*Math.sin(v3)];
+  let seed1=Math.abs(e0[0])<0.9?[1,0,0,0]:[0,1,0,0];
+  let e1=sub(seed1,e0.map(x=>dot(seed1,e0)*x)); e1=normalize(e1);
+  let seed2=Math.abs(dot([0,0,1,0],e0))<0.9?[0,0,1,0]:[0,0,0,1];
+  let e2=sub(seed2,e0.map(x=>dot(seed2,e0)*x)); e2=sub(e2,e1.map(x=>dot(e2,e1)*x)); e2=normalize(e2);
+  if(e.key==="w"){vx+=0.01*e0[0];vy+=0.01*e0[1];vz+=0.01*e0[2];vw+=0.01*e0[3];}
+  if(e.key==="s"){vx-=0.01*e0[0];vy-=0.01*e0[1];vz-=0.01*e0[2];vw-=0.01*e0[3];}
+  if(e.key==="d"){vx-=0.01*e1[0];vy-=0.01*e1[1];vz-=0.01*e1[2];vw-=0.01*e1[3];}
+  if(e.key==="a"){vx+=0.01*e1[0];vy+=0.01*e1[1];vz+=0.01*e1[2];vw+=0.01*e1[3];}
+  if(e.key==="q"){vx-=0.01*e2[0];vy-=0.01*e2[1];vz-=0.01*e2[2];vw-=0.01*e2[3];}
+  if(e.key==="z"){vx+=0.01*e2[0];vy+=0.01*e2[1];vz+=0.01*e2[2];vw+=0.01*e2[3];}
+  if(e.key==="c") vw+=0.01; if(e.key==="x") vw-=0.01;
+  v1 = modMinus2PiTo2Pi(v1);
+  v2 = modMinus2PiTo2Pi(v2);
+  v3 = modMinus2PiTo2Pi(v3);
+});
+
+  // projecting 4d to 3d
+function projectAnglesAndScreen(v, alreadyRelative = false){
+    let x1, x2, x3, x4;
+
+    if(!alreadyRelative){
+        x1 = v.x - vx;
+        x2 = v.y - vy;
+        x3 = v.z - vz;
+        x4 = v.w - vw;
+    } else {
+        x1 = v.x;
+        x2 = v.y;
+        x3 = v.z;
+        x4 = v.w;
+    }
+
+const x1x1 = x1 * x1;
+const x2x2 = x2 * x2;
+const x3x3 = x3 * x3;
+const x4x4 = x4 * x4;
+
+const r3 = Math.sqrt(x1x1 + x2x2 + x3x3);
+const r  = Math.sqrt(r3 * r3 + x4x4);
+
+const theta1 = Math.atan2(x2, x1);               // [-PI, PI]
+
+const theta2 = Math.atan2(Math.sqrt(x1x1 + x2x2), x3);  
+
+const theta3 = Math.atan2(r3, x4);              
+
+
+
+  const v1p = modc(theta1 + v1);
+  const v2p = modc(theta2 + v2 - (Math.PI/2));
+  const v3p = modc(theta3 + v3 - (Math.PI/2));
+  return {
+    screen: { x: v1p, y: v2p, z: v3p},
+    r4: r
+  };
+}
+
+
+
+
+
+function modc(value, n=Math.PI) {
+  const m = value % (2 * n);
+  return m > n ? m - 2 * n : m < -n ? m + 2 * n : m;
+}
+
+
+
+
+  // projecting 3d to 2d
+function rotate3D(v){
+    const cosX = Math.cos(-angleX), sinX = Math.sin(-angleX);
+    const cosY = Math.cos(-angleY), sinY = Math.sin(-angleY);
+
+    let y = v.y * cosX - v.z * sinX;
+    let z = v.y * sinX + v.z * cosX;
+    v.y = y; v.z = z;
+
+    let x = v.x * cosY + v.z * sinY;
+    z = -v.x * sinY + v.z * cosY;
+    v.x = x; v.z = z;
+
+    const depth = 5; 
+    const perspective = depth / (depth - v.z); 
+    v.x *= perspective;
+    v.y *= perspective;
+
+    return v;
+}
+
+
+
+         
+
+
+
+
+function solveLinear4x4(M, b) {
+    const A = M.map((row,i) => row.concat([b[i]]));
+    for (let i=0;i<4;i++){
+        let maxRow=i;
+        for (let k=i+1;k<4;k++) if(Math.abs(A[k][i])>Math.abs(A[maxRow][i])) maxRow=k;
+        [A[i],A[maxRow]]=[A[maxRow],A[i]];
+        if(Math.abs(A[i][i])<1e-8) return null; // singular
+        for(let k=i+1;k<4;k++){
+            const f=A[k][i]/A[i][i];
+            for(let j=i;j<5;j++) A[k][j]-=f*A[i][j];
+        }
+    }
+    const x=Array(4).fill(0);
+    for(let i=3;i>=0;i--){
+        x[i]=A[i][4]/A[i][i];
+        for(let k=i-1;k>=0;k--) A[k][4]-=A[k][i]*x[i];
+    }
+    return x;
+}
+
+
+
+function RIT(p, tet) {
+    const [v0, v1, v2, v3] = tet;
+
+    const E1 = { x: v1.x - v0.x, y: v1.y - v0.y, z: v1.z - v0.z, w: v1.w - v0.w };
+    const E2 = { x: v2.x - v0.x, y: v2.y - v0.y, z: v2.z - v0.z, w: v2.w - v0.w };
+    const E3 = { x: v3.x - v0.x, y: v3.y - v0.y, z: v3.z - v0.z, w: v3.w - v0.w };
+
+    const dir = { x: -p.x, y: -p.y, z: -p.z, w: -p.w };
+
+    const M = [
+        [E1.x, E2.x, E3.x, -dir.x],
+        [E1.y, E2.y, E3.y, -dir.y],
+        [E1.z, E2.z, E3.z, -dir.z],
+        [E1.w, E2.w, E3.w, -dir.w]
+    ];
+
+    const b = [
+        p.x - v0.x,
+        p.y - v0.y,
+        p.z - v0.z,
+        p.w - v0.w
+    ];
+
+    const sol = solveLinear4x4(M, b);
+    if (!sol) return { hit: false };
+
+    const [u, v, w, t] = sol;
+
+    if (u >= 0 && v >= 0 && w >= 0 && u + v + w <= 1 && t >= 0 && t <= 1) {
+        return { hit: true };
+    }
+    return { hit: false };
+}
+
+
+     
+    const tets = [];
+
+      
+
+    
+
+    function generate4DTetrahedraFull() {
+    const pt = (x, y, z, w) => ({ x, y, z, w });
+
+    const verts = [];
+    for (let x of [-1,1])
+        for (let y of [-1,1])
+            for (let z of [-1,1])
+                for (let w of [-1,1])
+                    verts.push(pt(x,y,z,w));
+
+
+    const cells = [
+        [0,1,3,2,4,5,7,6], // w = -1 cube
+        [8,9,11,10,12,13,15,14], // w = +1 cube
+        [0,1,5,4,8,9,13,12], // x = -1 cube
+        [2,3,7,6,10,11,15,14], // x = +1 cube
+        [0,2,6,4,8,10,14,12], // y = -1 cube
+        [1,3,7,5,9,11,15,13], // y = +1 cube
+        [0,1,3,2,8,9,11,10], // z = -1 cube
+        [4,5,7,6,12,13,15,14] // z = +1 cube
+    ];
+
+    const cubeTetraIndices = [
+        [0,1,3,7],
+        [0,3,2,7],
+        [0,2,6,7],
+        [0,6,4,7],
+        [0,4,5,7]
+    ];
+
+    for (let cell of cells) {
+        for (let tet of cubeTetraIndices) {
+            tets.push(tet.map(i => verts[cell[i]]));
+        }
+    }
+
+    return tets;
+}
+
+
+function generate4DTetrahedra() {
+
+  const pt = (x, y, z, w) => ({ x, y, z, w });
+
+  const pentachoronVerts = [
+    pt(5 + 1, 0, 0, -1/Math.sqrt(2)),
+    pt(5 - 1, 0, 0, -1/Math.sqrt(2)),
+    pt(5, 1, 0, 1/Math.sqrt(2)),
+    pt(5, -1, 0, 1/Math.sqrt(2)),
+    pt(5, 0, 1, 0)
+  ];
+
+  const comb4 = (arr) => {
+    const result = [];
+    const n = arr.length;
+    for (let i = 0; i < n; i++) {
+      for (let j = i+1; j < n; j++) {
+        for (let k = j+1; k < n; k++) {
+          for (let l = k+1; l < n; l++) {
+            result.push([arr[i], arr[j], arr[k], arr[l]]);
+          }
+        }
+      }
+    }
+    return result;
+  };
+
+  tets.push(...comb4(pentachoronVerts));
+
+  return tets;
+}
+
+generate4DTetrahedra();
+generate4DTetrahedraFull()
+
+
+function testing(rayDir,tets) {
+for (let tet of tets) {
+        if (RIT(rayDir, tet).hit) {
+           test = 1
+            return false; }
+    }
+return true
+}
+
+console.log(testing({x:0,y:0,z:0,w:3},tets))
+
+
+const p1 = { x:0*Math.sqrt(2), y:0, z:0, w:3}
+
+
+
+
+
+
+function drawLabel3D(text, p3) {
+    const rotated = rotate3D({ x: p3.x, y: p3.y, z: p3.z });
+
+    const sx = canvas.width / 2 + rotated.x * SCALE;
+    const sy = canvas.height / 2 + rotated.y * SCALE;
+
+    if (sx < 0 || sx > canvas.width || sy < 0 || sy > canvas.height) return;
+
+    ctx.font = "14px monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillText(text, sx + 4, sy - 4);
+}
+
+
+
+function drawViewingBox(){
+  const cx0 = canvas.width/2, cy0 = canvas.height/2;
+  b1 = -Math.PI/2;
+  b2 = Math.PI/2;
+  const boxVerts=[
+    {x:b1,y:b1,z:b1}, {x:b2,y:b1,z:b1}, {x:b2,y:b2,z:b1}, {x:b1,y:b2,z:b1},
+    {x:b1,y:b1,z:b2}, {x:b2,y:b1,z:b2}, {x:b2,y:b2,z:b2}, {x:b1,y:b2,z:b2}
+  ];
+  const edges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  ctx.strokeStyle="rgba(0,255,0,0.5)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  edges.forEach(([i,j])=>{
+    const a = rotate3D({...boxVerts[i]});
+    const b = rotate3D({...boxVerts[j]});
+    ctx.moveTo(cx0 + a.x * SCALE, cy0 + a.y * SCALE);
+    ctx.lineTo(cx0 + b.x * SCALE, cy0 + b.y * SCALE);
+  });
+  ctx.stroke();
+}
+
+
+function sample4D(func, t0, t1, tol = 0.01) {
+    const points = [];
+
+    function recursiveSample(tStart, tEnd) {
+        const p0 = func(tStart);
+        const p1 = func(tEnd);
+        const tMid = (tStart + tEnd) / 2;
+        const pMid = func(tMid);
+
+        const v = p1.map((val, i) => val - p0[i]);
+        const vLen2 = v.reduce((sum, val) => sum + val*val, 0);
+
+        const pmToP0 = pMid.map((val, i) => val - p0[i]);
+        const dot = pmToP0.reduce((sum, val, i) => sum + val*v[i], 0);
+        const proj = v.map(val => (dot/vLen2)*val);
+        const distVec = pmToP0.map((val, i) => val - proj[i]);
+        const dist = Math.sqrt(distVec.reduce((sum, val) => sum + val*val, 0));
+
+        if(dist > tol) {
+            recursiveSample(tStart, tMid);
+            recursiveSample(tMid, tEnd);
+        } else {
+            points.push(p0);
+        }
+    }
+
+    recursiveSample(t0, t1);
+    points.push(func(t1));
+    return points;
+}
+
+
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const cx0 = width / 2;
+    const cy0 = height / 2;
+
+    
+function plotPoint(p4, currentTet) {
+    let rx = p4.x - vx;
+    let ry = p4.y - vy;
+    let rz = p4.z - vz;
+    let rw = p4.w - vw;
+
+    const L = Math.hypot(rx, ry, rz, rw);
+    if (L === 0) return ;
+
+    const rayDir = {x: rx, y: ry, z: rz, w: rw};
+    let test = 0
+    for (let tet of tets) {
+        if (tet === currentTet) continue;
+        if (RIT(rayDir, tet).hit) {
+           test = 1
+            return; }
+    }
+
+    const proj = projectAnglesAndScreen(p4);
+    const p3 = rotate3D({ x: proj.screen.x, y: proj.screen.y, z: proj.screen.z });
+    const sx = (canvas.width  >> 1) + p3.x * SCALE;
+    const sy = (canvas.height >> 1) + p3.y * SCALE;
+
+    if (sx < 0 || sx >= canvas.width || sy < 0 || sy >= canvas.height) return;
+
+    const fade = Math.max(0, 1 - Math.hypot(p3.x, p3.y, p3.z) / FADE_DISTANCE);
+    ctx.fillStyle = `rgba(255,255,255,${fade})`;
+    ctx.fillRect(sx, sy, 1, 1);
+}
+
+
+
+
+
+
+    tets.forEach(tetcell => {
+            const verts = tetcell;
+            const edges = [
+                [verts[0], verts[1]],
+                [verts[0], verts[2]],
+                [verts[0], verts[3]],
+                [verts[1], verts[2]],
+                [verts[1], verts[3]],
+                [verts[2], verts[3]]
+            ];
+
+            edges.forEach(([vStart, vEnd]) => {
+                const steps = 20/Math.hypot(vStart.x+vEnd.x,vStart.y+vEnd.y,vStart.z+vEnd.z,vStart.w+vEnd.w)
+                for (let i = 0; i <= steps; i++) {
+                    const t = 0.1*i;
+                    const point = {
+            x: vStart.x * (1 - t) + vEnd.x * t + (Math.random() - 0.5) * 0.01,
+            y: vStart.y * (1 - t) + vEnd.y * t + (Math.random() - 0.5) * 0.01,
+            z: vStart.z * (1 - t) + vEnd.z * t + (Math.random() - 0.5) * 0.01,
+            w: vStart.w * (1 - t) + vEnd.w * t + (Math.random() - 0.5) * 0.01
+        
+                    };
+                    plotPoint(point,tetcell);
+                }
+            });
+        
+});
+
+
+
+
+
+
+    drawLabel3D("Down", { x: 0, y: 2, z: 0 });
+    drawLabel3D("Up", { x: 0, y: -2, z: 0 });
+    drawViewingBox();
+    requestAnimationFrame(draw);
+}
+
+
+
+
+draw();
+
+</script>
+</body>
+</html>
