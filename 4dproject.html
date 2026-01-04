@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Freaky Simulator — coherent angular occlusion</title>
+<style>
+  body { margin:0; overflow:hidden; }
+  canvas { display:block; background:#111; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script src="4drender.js"></script>
+<script>
+
+//import { draw } from './4drender.js';
+
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+
+
+resize(); window.addEventListener("resize", resize);
+
+
+
+
+
+
+
+
+let sceneObj = [];
+
+
+async function loadLevel(level) { 
+  try {
+    const response = await fetch('lvl' + level + '.json');
+    const data = await response.json();
+    sceneObj = data; 
+    return data; 
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+
+
+
+
+let mouseDown=false, lastX=0, lastY=0;
+canvas.addEventListener("mousedown", e => {
+    mouseDown = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+});
+canvas.addEventListener("mouseup", () => mouseDown = false);
+canvas.addEventListener("mousemove", e => {
+    if (!mouseDown) return;
+
+    velocityY = (e.clientX - lastX) * 0.01;
+    velocityX = (e.clientY - lastY) * 0.01;
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+});
+
+
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="w") vz-=0.02;
+  if(e.key==="s") vz+=0.02;
+  if(e.key==="d") vx+=0.02;
+  if(e.key==="a") vx-=0.02;
+  if(e.key==="z") vy+=0.02;
+  if(e.key==="q") vy-=0.02;
+  if(e.key==="W") vz-=0.05;
+  if(e.key==="S") vz+=0.05;
+  if(e.key==="D") vx+=0.05;
+  if(e.key==="A") vx-=0.05;
+  if(e.key==="Z") vy+=0.05;
+  if(e.key==="Q") vy-=0.05;
+  if(e.key===" ") vw+=0.05; 
+  if(e.code==="ControlLeft") vw-=0.05;
+
+});
+window.addEventListener('wheel', (e) => {
+    zoomdepth -= e.deltaY * 0.001; // adjust zoom speed as needed
+    zoomdepth = Math.max(0.5, zoomdepth); 
+    zoomdepth = Math.min(3, zoomdepth); 
+
+});
+
+
+
+
+///function renderScene(objects) {
+
+//}
+
+     
+
+
+async function run() {
+  await loadLevel(1); // load level 1
+    draw(sceneObj.tets, ctx);
+    angleY += velocityY;
+    angleX += velocityX;
+    angleX = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, angleX));
+    velocityX *= 0.8;
+    velocityY *= 0.8;
+    requestAnimationFrame(run);
+  
+  }
+
+run();
+
+
+</script>
+</body>
+</html>
