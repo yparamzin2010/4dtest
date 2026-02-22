@@ -11,7 +11,7 @@
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<script src="4dproject.js"></script>
+<script src="4drender.js"></script>
 <script>
 
 //import { draw } from './4drender.js';
@@ -52,45 +52,112 @@ async function loadLevel(level) {
 }
 
 
-
-
-
-let mouseDown=false, lastX=0, lastY=0;
-canvas.addEventListener("mousedown", e => {
-    mouseDown = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
+canvas.addEventListener("click", () => {
+  canvas.requestPointerLock();
 });
-canvas.addEventListener("mouseup", () => mouseDown = false);
+
+
+
+
 canvas.addEventListener("mousemove", e => {
-    if (!mouseDown) return;
-
-    velocityY = (e.clientX - lastX) * 0.01;
-    velocityX = (e.clientY - lastY) * 0.01;
-
-    lastX = e.clientX;
-    lastY = e.clientY;
+ //   if (!mouseDown) return;
+    if (!document.pointerLockElement) return;
+    angleY += e.movementX*0.005;
+    angleX += e.movementY*0.005;
 });
 
 
-
-document.addEventListener("keydown", e=>{
-  if(e.key==="w") vz-=0.02;
-  if(e.key==="s") vz+=0.02;
-  if(e.key==="d") vx+=0.02;
-  if(e.key==="a") vx-=0.02;
-  if(e.key==="z") vy+=0.02;
-  if(e.key==="q") vy-=0.02;
-  if(e.key==="W") vz-=0.05;
-  if(e.key==="S") vz+=0.05;
-  if(e.key==="D") vx+=0.05;
-  if(e.key==="A") vx-=0.05;
-  if(e.key==="Z") vy+=0.05;
-  if(e.key==="Q") vy-=0.05;
-  if(e.key===" ") vw+=0.05; 
-  if(e.code==="ControlLeft") vw-=0.05;
-
+document.addEventListener("keydown", e => {
+  // Calculate camera direction vectors from angles
+  const forward = {
+    x: -Math.sin(angleY) * Math.cos(angleX),
+    y: -Math.sin(angleX),
+    z: -Math.cos(angleY) * Math.cos(angleX)
+  };
+  
+  const right = {
+    x: -Math.cos(angleY),
+    y: 0,
+    z: Math.sin(angleY)
+  };
+  
+  const up = {
+    x: Math.sin(angleY) * Math.sin(angleX),
+    y: Math.cos(angleX),
+    z: Math.cos(angleY) * Math.sin(angleX)
+  };
+  
+  const baseSpeed = -0.02;
+  const fastSpeed = -0.05;
+  
+  // Forward/backward (W/S)
+  if (e.key === "w") {
+    vx += forward.x * baseSpeed;
+    vy += forward.y * baseSpeed;
+    vz += forward.z * baseSpeed;
+  }
+  if (e.key === "W") {
+    vx += forward.x * fastSpeed;
+    vy += forward.y * fastSpeed;
+    vz += forward.z * fastSpeed;
+  }
+  if (e.key === "s") {
+    vx -= forward.x * baseSpeed;
+    vy -= forward.y * baseSpeed;
+    vz -= forward.z * baseSpeed;
+  }
+  if (e.key === "S") {
+    vx -= forward.x * fastSpeed;
+    vy -= forward.y * fastSpeed;
+    vz -= forward.z * fastSpeed;
+  }
+  
+  // Right/left (D/A)
+  if (e.key === "d") {
+    vx += right.x * baseSpeed;
+    vy += right.y * baseSpeed;
+    vz += right.z * baseSpeed;
+  }
+  if (e.key === "D") {
+    vx += right.x * fastSpeed;
+    vy += right.y * fastSpeed;
+    vz += right.z * fastSpeed;
+  }
+  if (e.key === "a") {
+    vx -= right.x * baseSpeed;
+    vy -= right.y * baseSpeed;
+    vz -= right.z * baseSpeed;
+  }
+  if (e.key === "A") {
+    vx -= right.x * fastSpeed;
+    vy -= right.y * fastSpeed;
+    vz -= right.z * fastSpeed;
+  }
+  
+  // Up/down (Q/Z)
+  if (e.key === "q") {
+    vx += up.x * baseSpeed;
+    vy += up.y * baseSpeed;
+    vz += up.z * baseSpeed;
+  }
+  if (e.key === "Q") {
+    vx += up.x * fastSpeed;
+    vy += up.y * fastSpeed;
+    vz += up.z * fastSpeed;
+  }
+  if (e.key === "z") {
+    vx -= up.x * baseSpeed;
+    vy -= up.y * baseSpeed;
+    vz -= up.z * baseSpeed;
+  }
+  if (e.key === "Z") {
+    vx -= up.x * fastSpeed;
+    vy -= up.y * fastSpeed;
+    vz -= up.z * fastSpeed;
+  }
 });
+
+
 window.addEventListener('wheel', (e) => {
     zoomdepth -= e.deltaY * 0.001; // adjust zoom speed as needed
     zoomdepth = Math.max(0.5, zoomdepth); 
@@ -111,11 +178,8 @@ window.addEventListener('wheel', (e) => {
 async function run() {
   await loadLevel(1); // load level 1
     draw(sceneObj.tets, ctx);
-    angleY += velocityY;
-    angleX += velocityX;
-    angleX = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, angleX));
-    velocityX *= 0.8;
-    velocityY *= 0.8;
+//    angleX = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, angleX));
+
     requestAnimationFrame(run);
   
   }
@@ -126,4 +190,3 @@ run();
 </script>
 </body>
 </html>
-
