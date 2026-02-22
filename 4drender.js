@@ -319,140 +319,82 @@ function prepareTetra(cell){
     plane(A,B,C,D)
   ];
 }
-
-
 function draw(tets, ctx){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   cameraW = vw + 5;
   const cx = canvas.width >> 1;
   const cy = canvas.height >> 1;
-  for (const scene of Object.values(tets)){
+  
+  // Access the actual scenes - handle the nested structure
+  const scenes = tets.tets || tets;
+  
+  for (const scene of Object.values(scenes)){
     for (const cell of scene){
       cell._scaled = cell.tetra.map(v =>
         scaleOrtho(v, vx, vy, vz, vw)
       );
       prepareTetra(cell);
     }
-
     scene.sort((a,b)=> b._cz - a._cz);
   }
 
-
-  for (const scene of Object.values(tets)){
-    for (let si=0; si<scene.length; si++){
-      const cell = scene[si];
+  for (const scene of Object.values(scenes)){
+    for (const cell of scene){
       const verts = cell._scaled;
-function plot(p, mat){
-    const dx = p.x - vx;
-    const dy = p.y - vy;
-    const dz = p.z - vz;
-    const dw = Math.abs(p.w - cameraW);
-    dist3D = Math.abs(Math.sqrt(dx*dx + dy*dy + dz*dz))
-    if (p.w > cameraW || dist3D > dw+2) return;
+      
+      // Draw the 4 triangular faces of each tetrahedron
+      const F = [[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+      
+      for (const [i,j,k] of F){
+        const a = verts[i];
+        const b = verts[j];
+        const c = verts[k];
+        
+        // Rotate each vertex to screen space
+        const r0 = rotate3D(a);
+        const r1 = rotate3D(b);
+        const r2 = rotate3D(c);
+        
+        // Convert to screen coordinates
+        const sx0 = cx + r0.x * SCALE;
+        const sy0 = cy + r0.y * SCALE;
+        const sx1 = cx + r1.x * SCALE;
+        const sy1 = cy + r1.y * SCALE;
+        const sx2 = cx + r2.x * SCALE;
+        const sy2 = cy + r2.y * SCALE;
 
-    const a = cell._aabb;
-    if (p.x < a.minX || p.x > a.maxX ||
-        p.y < a.minY || p.y > a.maxY ||
-        p.z < a.minZ || p.z > a.maxZ) return;
-
-    for (let k = 0; k < si; k++){
-        const o = scene[k];
-        const oa = o._aabb;
-        if (p.x >= oa.minX && p.x <= oa.maxX &&
-            p.y >= oa.minY && p.y <= oa.maxY &&
-            p.z >= oa.minZ && p.z <= oa.maxZ) {
-            if (insideTet(p,o)) return;
-        }
-    }
-
-    const r = rotate3D(p);
-    const sx = cx + r.x * SCALE;
-    const sy = cy + r.y * SCALE;
-    if (sx < 0 || sx >= canvas.width || sy < 0 || sy >= canvas.height) return;
-
-    const size = Math.max(0.5, 8/(1 + dw));
-
-    let alpha = 1 - Math.min(dist3D / (dw+2), 1);
-
-    ctx.fillStyle = `rgba(${mat.r},${mat.g},${mat.b},${alpha})`;
-    ctx.beginPath();
-    ctx.arc(sx, sy, size, 0, Math.PI * 2);
-    ctx.fill();
-}
-
-
-
-
-      if (cell.mat1){
-        ctx.fillStyle = `rgb(${cell.mat1.r},${cell.mat1.g},${cell.mat1.b})`;
+        const p = {
+          x: (a.x + b.x + c.x) / 3,
+          y: (a.y + b.y + c.y) / 3,
+          z: (a.z + b.z + c.z) / 3,
+          w: (a.w + b.w + c.w) / 3
+        };
+        
+        const dx = p.x - vx;
+        const dy = p.y - vy;
+        const dz = p.z - vz;
+        const dw = Math.abs(p.w - cameraW);
+        ctx.fillStyle = `rgba(${cell.col.r}, ${cell.col.g}, ${cell.col.b}, ${cell.col.a*(1 - Math.min(Math.abs(Math.sqrt(dx*dx + dy*dy + dz*dz)) / (dw+2), 1))})`;
+      //  console.log(cell.col)
         ctx.beginPath();
-
-        const E=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
-        for (const [i,j] of E){
-          const a=verts[i], b=verts[j];
-          for (let n=0;n<cell.mat1.n;n++){
-            const t=(n+0.5)/cell.mat1.n;
-            plot({
-              x:a.x+(b.x-a.x)*t,
-              y:a.y+(b.y-a.y)*t,
-              z:a.z+(b.z-a.z)*t,
-              w:a.w+(b.w-a.w)*t
-            },cell.mat1);
-          }
-        }
+        ctx.moveTo(sx0, sy0);
+        ctx.lineTo(sx1, sy1);
+        ctx.lineTo(sx2, sy2);
+        ctx.closePath();
         ctx.fill();
-      }
+        
 
-      if (cell.mat2){
-        ctx.fillStyle = `rgb(${cell.mat2.r},${cell.mat2.g},${cell.mat2.b})`;
-        ctx.beginPath();
-
-        const F=[[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
-        for (const [i,j,k] of F){
-          const a=verts[i],b=verts[j],c=verts[k];
-          for (let n=0;n<cell.mat2.n;n++){
-            let u=Math.random(),v=Math.random();
-            if (u+v>1){u=1-u;v=1-v;}
-            plot({
-              x:a.x*u+b.x*v+c.x*(1-u-v),
-              y:a.y*u+b.y*v+c.y*(1-u-v),
-              z:a.z*u+b.z*v+c.z*(1-u-v),
-              w:a.w*u+b.w*v+c.w*(1-u-v)
-            },cell.mat2);
-          }
-        }
-        ctx.fill();
-      }
-
-            if (cell.mat3){
-        ctx.fillStyle = `rgb(${cell.mat3.r},${cell.mat3.g},${cell.mat3.b})`;
-        ctx.beginPath();
-
-        for (let n=0;n<cell.mat3.n;n++){
-          let a=Math.random(),b=Math.random(),c=Math.random(),d=Math.random();
-          const s=a+b+c+d;
-          a/=s; b/=s; c/=s; d/=s;
-
-          plot({
-            x: a*v[0].x + b*v[1].x + c*v[2].x + d*v[3].x,
-            y: a*v[0].y + b*v[1].y + c*v[2].y + d*v[3].y,
-            z: a*v[0].z + b*v[1].z + c*v[2].z + d*v[3].z,
-            w: a*v[0].w + b*v[1].w + c*v[2].w + d*v[3].w
-          });
-        }
-        ctx.fill();
       }
     }
   }
 
-    drawViewingBox();
-    drawLabel3D("Z", { x: 0, y: 2, z: 0 });
-    drawLabel3D("Q", { x: 0, y: -2, z: 0 });    
-    drawLabel3D("A", { x: -2, y: 0, z: 0 });
-    drawLabel3D("D", { x: 2, y: 0, z: 0 });
-    drawLabel3D("W", { x: 0, y: 0, z: -2 });
-    drawLabel3D("S", { x: 0, y: 0, z: 2 });
-    //requestAnimationFrame(draw);
+  drawViewingBox();
+  drawLabel3D("Z", { x: 0, y: 2, z: 0 });
+  drawLabel3D("Q", { x: 0, y: -2, z: 0 });    
+  drawLabel3D("A", { x: -2, y: 0, z: 0 });
+  drawLabel3D("D", { x: 2, y: 0, z: 0 });
+  drawLabel3D("W", { x: 0, y: 0, z: -2 });
+  drawLabel3D("S", { x: 0, y: 0, z: 2 });
 }
 
 
