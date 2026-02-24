@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>f</title>
+<title>4D Renderer</title>
 <style>
   body { margin:0; overflow:hidden; }
   canvas { display:block; background:#111; }
@@ -11,183 +10,11 @@
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<script src="4drender.js"></script>
-<script>
-
-//import { draw } from './4drender.js';
-
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-
-
-resize(); window.addEventListener("resize", resize);
-
-
-
-
-
-
-
-
-let sceneObj = [];
-
-
-async function loadLevel(level) { 
-  try {
-    const response = await fetch('lvl' + level + '.json');
-    const data = await response.json();
-    sceneObj = data; 
-    return data; 
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-
-canvas.addEventListener("click", () => {
-  canvas.requestPointerLock();
-});
-
-
-
-
-canvas.addEventListener("mousemove", e => {
- //   if (!mouseDown) return;
-    if (!document.pointerLockElement) return;
-    angleY += e.movementX*0.005;
-    angleX += e.movementY*0.005;
-});
-
-
-document.addEventListener("keydown", e => {
-  // Calculate camera direction vectors from angles
-  const forward = {
-    x: -Math.sin(angleY) * Math.cos(angleX),
-    y: -Math.sin(angleX),
-    z: -Math.cos(angleY) * Math.cos(angleX)
-  };
-  
-  const right = {
-    x: -Math.cos(angleY),
-    y: 0,
-    z: Math.sin(angleY)
-  };
-  
-  const up = {
-    x: Math.sin(angleY) * Math.sin(angleX),
-    y: Math.cos(angleX),
-    z: Math.cos(angleY) * Math.sin(angleX)
-  };
-  
-  const baseSpeed = -0.02;
-  const fastSpeed = -0.05;
-  
-  // Forward/backward (W/S)
-  if (e.key === "w") {
-    vx += forward.x * baseSpeed;
-    vy += forward.y * baseSpeed;
-    vz += forward.z * baseSpeed;
-  }
-  if (e.key === "W") {
-    vx += forward.x * fastSpeed;
-    vy += forward.y * fastSpeed;
-    vz += forward.z * fastSpeed;
-  }
-  if (e.key === "s") {
-    vx -= forward.x * baseSpeed;
-    vy -= forward.y * baseSpeed;
-    vz -= forward.z * baseSpeed;
-  }
-  if (e.key === "S") {
-    vx -= forward.x * fastSpeed;
-    vy -= forward.y * fastSpeed;
-    vz -= forward.z * fastSpeed;
-  }
-  
-  // Right/left (D/A)
-  if (e.key === "d") {
-    vx += right.x * baseSpeed;
-    vy += right.y * baseSpeed;
-    vz += right.z * baseSpeed;
-  }
-  if (e.key === "D") {
-    vx += right.x * fastSpeed;
-    vy += right.y * fastSpeed;
-    vz += right.z * fastSpeed;
-  }
-  if (e.key === "a") {
-    vx -= right.x * baseSpeed;
-    vy -= right.y * baseSpeed;
-    vz -= right.z * baseSpeed;
-  }
-  if (e.key === "A") {
-    vx -= right.x * fastSpeed;
-    vy -= right.y * fastSpeed;
-    vz -= right.z * fastSpeed;
-  }
-  
-  // Up/down (Q/Z)
-  if (e.key === "q") {
-    vx += up.x * baseSpeed;
-    vy += up.y * baseSpeed;
-    vz += up.z * baseSpeed;
-  }
-  if (e.key === "Q") {
-    vx += up.x * fastSpeed;
-    vy += up.y * fastSpeed;
-    vz += up.z * fastSpeed;
-  }
-  if (e.key === "z") {
-    vx -= up.x * baseSpeed;
-    vy -= up.y * baseSpeed;
-    vz -= up.z * baseSpeed;
-  }
-  if (e.key === "Z") {
-    vx -= up.x * fastSpeed;
-    vy -= up.y * fastSpeed;
-    vz -= up.z * fastSpeed;
-  }
-});
-
-
-window.addEventListener('wheel', (e) => {
-    zoomdepth -= e.deltaY * 0.001; // adjust zoom speed as needed
-    zoomdepth = Math.max(0.5, zoomdepth); 
-    zoomdepth = Math.min(3, zoomdepth); 
-
-});
-
-
-
-
-///function renderScene(objects) {
-
-//}
-
-     
-
-
-async function run() {
-  await loadLevel(1); // load level 1
-    draw(sceneObj.tets, ctx);
-//    angleX = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, angleX));
-
-    requestAnimationFrame(run);
-  
-  }
-
-run();
-
-
-</script>
+<script src="js/Camera4D.js"></script>
+<script src="js/Renderer4D.js"></script>
+<script src="js/InputController.js"></script>
+<script src="js/LevelLoader.js"></script>
+<script src="js/FourDApp.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
-
