@@ -22,8 +22,9 @@ class Renderer4D {
   }
 
   resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const viewport = this.canvas.parentElement;
+    this.canvas.width = viewport ? viewport.clientWidth : window.innerWidth;
+    this.canvas.height = viewport ? viewport.clientHeight : window.innerHeight;
   }
 
   // Rotate a 3D point by camera angles, then apply simple perspective.
@@ -184,9 +185,11 @@ class Renderer4D {
             w: (a.w + b.w + c.w) / 3
           };
 
-          const dx = p.x - this.camera.position.x;
-          const dy = p.y - this.camera.position.y;
-          const dz = p.z - this.camera.position.z;
+          // `p` is already camera-relative after `scaleOrtho`, so do not
+          // subtract camera position a second time or the alpha fade collapses.
+          const dx = p.x;
+          const dy = p.y;
+          const dz = p.z;
           const dw = Math.abs(p.w - this.camera.cameraW);
           const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
           const fade = 1 - Math.min(Math.abs(distance) / (dw + 2), 1);

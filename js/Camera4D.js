@@ -4,14 +4,8 @@
  */
 class Camera4D {
   constructor() {
-    // Camera orientation and projection depth settings.
-    this.zoomDepth = 1;
-    this.angleX = 0;
-    this.angleY = 0;
-
-    // Camera position in 4D space.
-    this.position = { x: 0, y: 0, z: 0, w: 0 };
     this.cameraWOffset = 5;
+    this.reset();
   }
 
   // Effective camera W plane used by the 4D perspective factor.
@@ -91,6 +85,18 @@ class Camera4D {
   zoomByWheel(deltaY) {
     this.zoomDepth -= deltaY * 0.001;
     this.zoomDepth = Math.max(0.5, Math.min(3, this.zoomDepth));
+  }
+
+  reset(view = {}) {
+    this.zoomDepth = view.zoomDepth ?? 1;
+    this.angleX = view.angleX ?? 0;
+    this.angleY = view.angleY ?? 0;
+    this.position = {
+      x: view.position?.x ?? 0,
+      y: view.position?.y ?? 0,
+      z: view.position?.z ?? 0,
+      w: view.position?.w ?? 0
+    };
   }
 }
 

@@ -2,18 +2,218 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>4D Renderer</title>
 <style>
-  body { margin:0; overflow:hidden; }
-  canvas { display:block; background:#111; }
+  :root {
+    color-scheme: dark;
+    --bg: #09111a;
+    --panel: rgba(11, 21, 34, 0.92);
+    --panel-border: rgba(143, 192, 255, 0.16);
+    --panel-text: #e5eef9;
+    --panel-muted: #8fa2b8;
+    --accent: #8fc0ff;
+    --accent-strong: #ffd086;
+    --canvas-bg:
+      radial-gradient(circle at top, rgba(54, 90, 130, 0.32), transparent 48%),
+      linear-gradient(180deg, #081019 0%, #050a12 100%);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #050a12;
+    color: var(--panel-text);
+  }
+
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .library-panel {
+    width: 288px;
+    flex: 0 0 288px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 22px 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 32%),
+      var(--panel);
+    border-right: 1px solid var(--panel-border);
+    overflow-y: auto;
+  }
+
+  .library-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .library-kicker {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+  }
+
+  .library-heading {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.05;
+  }
+
+  .library-copy {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--panel-muted);
+  }
+
+  .library-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .library-section-title {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--panel-muted);
+  }
+
+  .library-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .library-item {
+    width: 100%;
+    border: 1px solid rgba(143, 192, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--panel-text);
+    padding: 12px 14px;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  }
+
+  .library-item:hover,
+  .library-item:focus-visible {
+    background: rgba(143, 192, 255, 0.12);
+    border-color: rgba(143, 192, 255, 0.36);
+    outline: none;
+  }
+
+  .library-item.is-active {
+    background: linear-gradient(135deg, rgba(143, 192, 255, 0.22), rgba(255, 208, 134, 0.12));
+    border-color: rgba(255, 208, 134, 0.44);
+    transform: translateX(2px);
+  }
+
+  .library-details {
+    margin-top: auto;
+    padding: 16px;
+    border: 1px solid rgba(143, 192, 255, 0.14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .library-details h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+
+  .library-details p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--panel-muted);
+  }
+
+  .viewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 100vh;
+    background: var(--canvas-bg);
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+  }
+
+  .viewport-note {
+    position: absolute;
+    left: 20px;
+    bottom: 18px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(7, 12, 20, 0.62);
+    border: 1px solid rgba(143, 192, 255, 0.12);
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--panel-muted);
+    pointer-events: none;
+  }
+
+  @media (max-width: 840px) {
+    .app-shell {
+      flex-direction: column;
+    }
+
+    .library-panel {
+      width: 100%;
+      flex-basis: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--panel-border);
+      max-height: 42vh;
+    }
+
+    .viewport {
+      min-height: 58vh;
+    }
+  }
 </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
+<div class="app-shell">
+  <aside class="library-panel" id="library-panel">
+    <header class="library-header">
+      <span class="library-kicker">Navigator</span>
+      <h1 class="library-heading">4D Shape Library</h1>
+      <p class="library-copy">Pick one shape to replace the current preview scene. Click the canvas to lock the pointer and inspect it.</p>
+    </header>
+    <div data-library-list></div>
+    <section class="library-details">
+      <h2 data-library-title>Shape</h2>
+      <p data-library-description>Select a built-in shape to preview its tetrahedral scene.</p>
+    </section>
+  </aside>
+  <main class="viewport">
+    <canvas id="canvas"></canvas>
+    <div class="viewport-note">Canvas: click for mouse look, wheel to zoom. Panel: browse shapes and read the active preview details.</div>
+  </main>
+</div>
 <script src="js/Camera4D.js"></script>
 <script src="js/Renderer4D.js"></script>
 <script src="js/InputController.js"></script>
 <script src="js/LevelLoader.js"></script>
+<script src="js/ShapeGeometry.js"></script>
+<script src="js/ShapeLibrary.js"></script>
+<script src="js/LibraryPanel.js"></script>
 <script src="js/FourDApp.js"></script>
 <script src="js/main.js"></script>
 </body>
