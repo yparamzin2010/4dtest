@@ -79,6 +79,11 @@ class Camera4D {
   rotateByMouse(deltaX, deltaY) {
     this.angleY += deltaX * 0.005;
     this.angleX += deltaY * 0.005;
+    this.angleX = Math.max(-Math.PI * 0.45, Math.min(Math.PI * 0.45, this.angleX));
+
+    if (this.orbitTarget) {
+      this.updateOrbitPosition();
+    }
   }
 
   // Mouse wheel zoom with clamp for stability.
@@ -88,6 +93,14 @@ class Camera4D {
   }
 
   reset(view = {}) {
+    this.orbitTarget = view.orbitTarget
+      ? {
+          x: view.orbitTarget.x ?? 0,
+          y: view.orbitTarget.y ?? 0,
+          z: view.orbitTarget.z ?? 0
+        }
+      : null;
+    this.orbitRadius = view.orbitRadius ?? null;
     this.zoomDepth = view.zoomDepth ?? 1;
     this.angleX = view.angleX ?? 0;
     this.angleY = view.angleY ?? 0;
@@ -97,6 +110,28 @@ class Camera4D {
       z: view.position?.z ?? 0,
       w: view.position?.w ?? 0
     };
+
+    if (this.orbitTarget) {
+      if (this.orbitRadius == null) {
+        const dx = this.position.x - this.orbitTarget.x;
+        const dy = this.position.y - this.orbitTarget.y;
+        const dz = this.position.z - this.orbitTarget.z;
+        this.orbitRadius = Math.sqrt(dx * dx + dy * dy + dz * dz) || 6;
+      }
+
+      this.updateOrbitPosition();
+    }
+  }
+
+  updateOrbitPosition() {
+    if (!this.orbitTarget) {
+      return;
+    }
+
+    const cosX = Math.cos(this.angleX);
+    this.position.x = this.orbitTarget.x + Math.sin(this.angleY) * cosX * this.orbitRadius;
+    this.position.y = this.orbitTarget.y + Math.sin(this.angleX) * this.orbitRadius;
+    this.position.z = this.orbitTarget.z + Math.cos(this.angleY) * cosX * this.orbitRadius;
   }
 }
 

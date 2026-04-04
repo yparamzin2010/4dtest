@@ -14,6 +14,8 @@ class ShapeLibrary {
         description: "The 4D simplex, built from five tetrahedral cells.",
         cameraStart: {
           position: { x: 0, y: 0, z: 6, w: 0 },
+          orbitTarget: { x: 0, y: 0, z: 0 },
+          orbitRadius: 6,
           angleX: 0.12,
           angleY: 0.18,
           zoomDepth: 1.15
@@ -27,6 +29,8 @@ class ShapeLibrary {
         description: "The 4D cross polytope, represented by sixteen tetrahedral cells.",
         cameraStart: {
           position: { x: 0, y: 0, z: 7, w: 0 },
+          orbitTarget: { x: 0, y: 0, z: 0 },
+          orbitRadius: 7,
           angleX: 0.18,
           angleY: 0.42,
           zoomDepth: 1
@@ -40,6 +44,8 @@ class ShapeLibrary {
         description: "A hypercube preview built from the eight cubic cells of a tesseract.",
         cameraStart: {
           position: { x: 0, y: 0, z: 8, w: 0 },
+          orbitTarget: { x: 0, y: 0, z: 0 },
+          orbitRadius: 8,
           angleX: 0.14,
           angleY: 0.55,
           zoomDepth: 0.95
@@ -53,6 +59,8 @@ class ShapeLibrary {
         description: "A pair of offset tetrahedra bridged across the W axis to show depth changes.",
         cameraStart: {
           position: { x: 0, y: 0, z: 6, w: 0 },
+          orbitTarget: { x: 0, y: 0, z: 0 },
+          orbitRadius: 6,
           angleX: 0.1,
           angleY: 0.3,
           zoomDepth: 1.1
