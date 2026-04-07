@@ -2,18 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>4D Renderer</title>
-<style>
-  body { margin:0; overflow:hidden; }
-  canvas { display:block; background:#111; }
-</style>
+<link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-<canvas id="canvas"></canvas>
+<div class="app-shell">
+  <aside class="library-panel" id="library-panel">
+    <header class="library-header">
+      <span class="library-kicker">Navigator</span>
+      <h1 class="library-heading">4D Shape Library</h1>
+      <p class="library-copy">Pick one shape to replace the current preview scene. Click the canvas to lock the pointer and inspect it.</p>
+    </header>
+    <div data-library-list></div>
+    <section class="library-details">
+      <h2 data-library-title>Shape</h2>
+      <p data-library-description>Select a built-in shape to preview its tetrahedral scene.</p>
+    </section>
+  </aside>
+  <main class="viewport">
+    <canvas id="canvas"></canvas>
+    <div class="viewport-note">Canvas: click for mouse look, wheel to zoom. Panel: browse shapes and read the active preview details.</div>
+  </main>
+</div>
 <script src="js/Camera4D.js"></script>
 <script src="js/Renderer4D.js"></script>
 <script src="js/InputController.js"></script>
 <script src="js/LevelLoader.js"></script>
+<script src="js/ShapeGeometry.js"></script>
+<script src="js/ShapeLibrary.js"></script>
+<script src="js/LibraryPanel.js"></script>
 <script src="js/FourDApp.js"></script>
 <script src="js/main.js"></script>
 </body>

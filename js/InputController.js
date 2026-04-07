@@ -3,9 +3,10 @@
  * Registers keyboard, mouse look, pointer lock, and zoom handlers.
  */
 class InputController {
-  constructor(canvas, camera) {
+  constructor(canvas, camera, options = {}) {
     this.canvas = canvas;
     this.camera = camera;
+    this.panel = options.panel || null;
   }
 
   // Register all user input handlers in one place.
@@ -28,8 +29,17 @@ class InputController {
     });
 
     window.addEventListener("wheel", (event) => {
+      if (this.panel && this.panel.contains(event.target)) {
+        return;
+      }
+
+      if (event.target !== this.canvas) {
+        return;
+      }
+
       this.camera.zoomByWheel(event.deltaY);
-    });
+      event.preventDefault();
+    }, { passive: false });
   }
 }
 
